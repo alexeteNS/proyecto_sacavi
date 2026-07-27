@@ -1,0 +1,711 @@
+{
+	"info": {
+		"name": "SACAVI API",
+		"description": "Colección completa de pruebas para SACAVI - Sistema de Control de Acceso Vehicular Universitario\n\nIncluye flujo positivo, casos negativos y simulación ESP32.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{ "key": "base_url", "value": "http://localhost:3000" },
+		{ "key": "student_token", "value": "" },
+		{ "key": "admin_token", "value": "" },
+		{ "key": "qr_token", "value": "" },
+		{ "key": "device_key", "value": "" },
+		{ "key": "device_id", "value": "" },
+		{ "key": "vehicle_id", "value": "" },
+		{ "key": "student_id", "value": "" }
+	],
+	"item": [
+		{
+			"name": "01 Device Setup",
+			"item": [
+				{
+					"name": "Registrar ESP32 (Entrada Norte)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+									"var json = pm.response.json();",
+									"pm.test(\"Devuelve device_key\", () => {",
+									"    pm.expect(json).to.have.property('device_key');",
+									"    pm.expect(json).to.have.property('id_device');",
+									"});",
+									"pm.collectionVariables.set('device_key', json.device_key);",
+									"pm.collectionVariables.set('device_id', json.id_device);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Entrada Principal\",\n    \"location\": \"Puerta Norte\",\n    \"device_key\": \"ESP32-A8292-001\"\n}"
+						},
+						"url": { "raw": "{{base_url}}/device/register", "host": ["{{base_url}}"], "path": ["device", "register"] }
+					}
+				},
+				{
+					"name": "Registrar ESP32 (Entrada Sur)",
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Entrada Secundaria\",\n    \"location\": \"Puerta Sur\",\n    \"device_key\": \"ESP32-B394-002\"\n}"
+						},
+						"url": { "raw": "{{base_url}}/device/register", "host": ["{{base_url}}"], "path": ["device", "register"] }
+					}
+				},
+				{
+					"name": "Consultar estado ESP32",
+					"request": {
+						"method": "GET",
+						"url": { "raw": "{{base_url}}/device/status/{{device_key}}", "host": ["{{base_url}}"], "path": ["device", "status", "{{device_key}}"] }
+					}
+				}
+			]
+		},
+		{
+			"name": "02 Auth - Estudiante",
+			"item": [
+				{
+					"name": "Registrar estudiante",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+									"var json = pm.response.json();",
+									"pm.test(\"Rol ESTUDIANTE\", () => {",
+									"    pm.expect(json.role).to.eql('ESTUDIANTE');",
+									"    pm.expect(json.permissions).to.include('REGISTRAR_VEHICULO');",
+									"});",
+									"pm.collectionVariables.set('student_id', json.id_user);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"María García\",\n    \"email\": \"maria@universidad.edu\",\n    \"password\": \"estudiante123\"\n}"
+						},
+						"url": { "raw": "{{base_url}}/user/register", "host": ["{{base_url}}"], "path": ["user", "register"] }
+					}
+				},
+				{
+					"name": "Login estudiante",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+									"var json = pm.response.json();",
+									"pm.test(\"Token + user\", () => {",
+									"    pm.expect(json).to.have.property('token');",
+									"    pm.expect(json.user.role).to.eql('ESTUDIANTE');",
+									"});",
+									"pm.collectionVariables.set('student_token', json.token);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"maria@universidad.edu\",\n    \"password\": \"estudiante123\"\n}"
+						},
+						"url": { "raw": "{{base_url}}/user/login", "host": ["{{base_url}}"], "path": ["user", "login"] }
+					}
+				},
+				{
+					"name": "Perfil estudiante",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+									"var json = pm.response.json();",
+									"pm.test(\"Permisos correctos\", () => {",
+									"    pm.expect(json.role).to.eql('ESTUDIANTE');",
+									"    pm.expect(json.permissions).to.include('REGISTRAR_VEHICULO');",
+									"    pm.expect(json.permissions).to.not.include('ABRIR_PLUMA');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [{ "key": "Authorization", "value": "Bearer {{student_token}}" }],
+						"url": { "raw": "{{base_url}}/user/profile", "host": ["{{base_url}}"], "path": ["user", "profile"] }
+					}
+				}
+			]
+		},
+		{
+			"name": "03 Auth - Admin",
+			"item": [
+				{
+					"name": "Login admin (hardcodeado en seed)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+									"var json = pm.response.json();",
+									"pm.test(\"Rol ADMIN\", () => {",
+									"    pm.expect(json.user.role).to.eql('ADMIN');",
+									"    pm.expect(json.user.permissions).to.include('ABRIR_PLUMA');",
+									"    pm.expect(json.user.permissions).to.include('VER_REGISTROS');",
+									"});",
+									"pm.collectionVariables.set('admin_token', json.token);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"admin@sacavi.edu\",\n    \"password\": \"admin123\"\n}"
+						},
+						"url": { "raw": "{{base_url}}/user/login", "host": ["{{base_url}}"], "path": ["user", "login"] }
+					}
+				}
+			]
+		},
+		{
+			"name": "04 Vehicle",
+			"item": [
+				{
+					"name": "Crear vehículo (estudiante)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+									"var json = pm.response.json();",
+									"pm.test(\"Vehículo creado\", () => {",
+									"    pm.expect(json).to.have.property('id_vehicle');",
+									"    pm.expect(json.plate).to.eql('ABC-123');",
+									"});",
+									"pm.collectionVariables.set('vehicle_id', json.id_vehicle);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" },
+							{ "key": "Authorization", "value": "Bearer {{student_token}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"plate\": \"ABC-123\",\n    \"brand\": \"Toyota\",\n    \"model\": \"Corolla\",\n    \"color\": \"Blanco\"\n}"
+						},
+						"url": { "raw": "{{base_url}}/vehicle", "host": ["{{base_url}}"], "path": ["vehicle"] }
+					}
+				},
+				{
+					"name": "Crear vehículo duplicado (debe fallar)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status 400\", () => pm.response.to.have.status(400));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" },
+							{ "key": "Authorization", "value": "Bearer {{student_token}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"plate\": \"ABC-123\",\n    \"brand\": \"Toyota\",\n    \"model\": \"Corolla\",\n    \"color\": \"Blanco\"\n}"
+						},
+						"url": { "raw": "{{base_url}}/vehicle", "host": ["{{base_url}}"], "path": ["vehicle"] }
+					}
+				},
+				{
+					"name": "Mis vehículos",
+					"request": {
+						"method": "GET",
+						"header": [{ "key": "Authorization", "value": "Bearer {{student_token}}" }],
+						"url": { "raw": "{{base_url}}/vehicle/my", "host": ["{{base_url}}"], "path": ["vehicle", "my"] }
+					}
+				}
+			]
+		},
+		{
+			"name": "05 QR Access Flow",
+			"item": [
+				{
+					"name": "Generar QR (estudiante)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+									"var json = pm.response.json();",
+									"pm.test(\"Token UUID\", () => {",
+									"    pm.expect(json).to.have.property('token');",
+									"    pm.expect(json.expires_in_seconds).to.eql(30);",
+									"});",
+									"pm.collectionVariables.set('qr_token', json.token);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [{ "key": "Authorization", "value": "Bearer {{student_token}}" }],
+						"url": { "raw": "{{base_url}}/qr/generate", "host": ["{{base_url}}"], "path": ["qr", "generate"] }
+					}
+				},
+				{
+					"name": "ESP32 escanea QR (entrada)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+									"var json = pm.response.json();",
+									"pm.test(\"Acceso permitido\", () => {",
+									"    pm.expect(json.allowed).to.eql(true);",
+									"    pm.expect(json.action).to.eql('OPEN_GATE');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"token\": \"{{qr_token}}\",\n    \"device_id\": {{device_id}},\n    \"timestamp\": \"2026-07-27T06:00:00\",\n    \"scanner\": \"QR_MODULE_01\"\n}"
+						},
+						"url": { "raw": "{{base_url}}/access/scan", "host": ["{{base_url}}"], "path": ["access", "scan"] }
+					}
+				},
+				{
+					"name": "Generar QR (salida)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+									"var json = pm.response.json();",
+									"pm.collectionVariables.set('qr_token', json.token);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [{ "key": "Authorization", "value": "Bearer {{student_token}}" }],
+						"url": { "raw": "{{base_url}}/qr/generate", "host": ["{{base_url}}"], "path": ["qr", "generate"] }
+					}
+				},
+				{
+					"name": "ESP32 escanea QR (salida)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+									"var json = pm.response.json();",
+									"pm.test(\"Salida permitida\", () => {",
+									"    pm.expect(json.allowed).to.eql(true);",
+									"    pm.expect(json.action).to.eql('OPEN_GATE');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"token\": \"{{qr_token}}\",\n    \"device_id\": {{device_id}},\n    \"timestamp\": \"2026-07-27T18:30:00\",\n    \"scanner\": \"QR_MODULE_01\"\n}"
+						},
+						"url": { "raw": "{{base_url}}/access/scan", "host": ["{{base_url}}"], "path": ["access", "scan"] }
+					}
+				},
+				{
+					"name": "Historial de accesos",
+					"request": {
+						"method": "GET",
+						"header": [{ "key": "Authorization", "value": "Bearer {{student_token}}" }],
+						"url": { "raw": "{{base_url}}/access/history", "host": ["{{base_url}}"], "path": ["access", "history"] }
+					}
+				},
+				{
+					"name": "Apertura manual (guardia)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+									"var json = pm.response.json();",
+									"pm.test(\"Respuesta servo\", () => {",
+									"    pm.expect(json).to.have.property('vehicle_plate');",
+									"    pm.expect(json.r#type).to.eql('MANUAL');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" },
+							{ "key": "Authorization", "value": "Bearer {{admin_token}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"id_vehicle\": {{vehicle_id}}\n}"
+						},
+						"url": { "raw": "{{base_url}}/access/open", "host": ["{{base_url}}"], "path": ["access", "open"] }
+					}
+				}
+			]
+		},
+		{
+			"name": "06 Roles",
+			"item": [
+				{
+					"name": "Permisos de rol ADMIN (id=1)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+									"var json = pm.response.json();",
+									"pm.test(\"ADMIN tiene ABRIR_PLUMA\", () => {",
+									"    pm.expect(json.role).to.eql('ADMIN');",
+									"    pm.expect(json.permissions).to.include('ABRIR_PLUMA');",
+									"    pm.expect(json.permissions).to.include('VER_REGISTROS');",
+									"    pm.expect(json.permissions).to.include('REGISTRAR_VEHICULO');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"url": { "raw": "{{base_url}}/roles/1/permissions", "host": ["{{base_url}}"], "path": ["roles", "1", "permissions"] }
+					}
+				},
+				{
+					"name": "Permisos de rol GUARDIA (id=2)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+									"var json = pm.response.json();",
+									"pm.test(\"GUARDIA tiene ABRIR_PLUMA\", () => {",
+									"    pm.expect(json.role).to.eql('GUARDIA');",
+									"    pm.expect(json.permissions).to.include('ABRIR_PLUMA');",
+									"    pm.expect(json.permissions).to.include('VER_REGISTROS');",
+									"    pm.expect(json.permissions).to.not.include('REGISTRAR_VEHICULO');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"url": { "raw": "{{base_url}}/roles/2/permissions", "host": ["{{base_url}}"], "path": ["roles", "2", "permissions"] }
+					}
+				},
+				{
+					"name": "Permisos ESTUDIANTE (id=3)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+									"var json = pm.response.json();",
+									"pm.test(\"ESTUDIANTE solo REGISTRAR_VEHICULO\", () => {",
+									"    pm.expect(json.role).to.eql('ESTUDIANTE');",
+									"    pm.expect(json.permissions).to.include('REGISTRAR_VEHICULO');",
+									"    pm.expect(json.permissions).to.not.include('ABRIR_PLUMA');",
+									"    pm.expect(json.permissions).to.not.include('VER_REGISTROS');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"url": { "raw": "{{base_url}}/roles/3/permissions", "host": ["{{base_url}}"], "path": ["roles", "3", "permissions"] }
+					}
+				},
+				{
+					"name": "Cambiar rol (admin)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+									"var json = pm.response.json();",
+									"pm.test(\"Rol cambiado a GUARDIA\", () => {",
+									"    pm.expect(json.role).to.eql('GUARDIA');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" },
+							{ "key": "Authorization", "value": "Bearer {{admin_token}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"id_role\": 2\n}"
+						},
+						"url": { "raw": "{{base_url}}/user/{{student_id}}/role", "host": ["{{base_url}}"], "path": ["user", "{{student_id}}", "role"] }
+					}
+				},
+				{
+					"name": "Estudiante intenta cambiar rol (FORBIDDEN)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status 403\", () => pm.response.to.have.status(403));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" },
+							{ "key": "Authorization", "value": "Bearer {{student_token}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"id_role\": 1\n}"
+						},
+						"url": { "raw": "{{base_url}}/user/{{student_id}}/role", "host": ["{{base_url}}"], "path": ["user", "{{student_id}}", "role"] }
+					}
+				}
+			]
+		},
+		{
+			"name": "07 Negative Tests",
+			"item": [
+				{
+					"name": "Login - contraseña incorrecta",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status 400\", () => pm.response.to.have.status(400));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"maria@universidad.edu\",\n    \"password\": \"contraseña_incorrecta\"\n}"
+						},
+						"url": { "raw": "{{base_url}}/user/login", "host": ["{{base_url}}"], "path": ["user", "login"] }
+					}
+				},
+				{
+					"name": "Login - usuario inexistente",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status 400\", () => pm.response.to.have.status(400));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"noexiste@test.com\",\n    \"password\": \"123456\"\n}"
+						},
+						"url": { "raw": "{{base_url}}/user/login", "host": ["{{base_url}}"], "path": ["user", "login"] }
+					}
+				},
+				{
+					"name": "QR usado dos veces (replay attack)",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Generar QR fresco para probar replay",
+									"pm.sendRequest({",
+									"    url: pm.collectionVariables.get('base_url') + '/qr/generate',",
+									"    method: 'GET',",
+									"    header: { 'Authorization': 'Bearer ' + pm.collectionVariables.get('student_token') }",
+									"}, function (err, res) {",
+									"    var json = res.json();",
+									"    pm.collectionVariables.set('_replay_qr', json.token);",
+									"    // Primer uso del QR",
+									"    pm.sendRequest({",
+									"        url: pm.collectionVariables.get('base_url') + '/access/scan',",
+									"        method: 'POST',",
+									"        header: { 'Content-Type': 'application/json' },",
+									"        body: {",
+									"            mode: 'raw',",
+									"            raw: JSON.stringify({ token: json.token, device_id: parseInt(pm.collectionVariables.get('device_id')) })",
+									"        }",
+									"    });",
+									"});"
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status 400 - QR reusado\", () => pm.response.to.have.status(400));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"token\": \"{{_replay_qr}}\",\n    \"device_id\": {{device_id}}\n}"
+						},
+						"url": { "raw": "{{base_url}}/access/scan", "host": ["{{base_url}}"], "path": ["access", "scan"] }
+					}
+				},
+				{
+					"name": "Device inválido (id=999)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status 400\", () => pm.response.to.have.status(400));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"token\": \"00000000-0000-0000-0000-000000000000\",\n    \"device_id\": 999\n}"
+						},
+						"url": { "raw": "{{base_url}}/access/scan", "host": ["{{base_url}}"], "path": ["access", "scan"] }
+					}
+				},
+				{
+					"name": "Sin token JWT en ruta protegida",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status 401\", () => pm.response.to.have.status(401));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"url": { "raw": "{{base_url}}/user/profile", "host": ["{{base_url}}"], "path": ["user", "profile"] }
+					}
+				},
+				{
+					"name": "Token JWT inválido",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status 401\", () => pm.response.to.have.status(401));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [{ "key": "Authorization", "value": "Bearer token_invalido_123" }],
+						"url": { "raw": "{{base_url}}/user/profile", "host": ["{{base_url}}"], "path": ["user", "profile"] }
+					}
+				},
+				{
+					"name": "Estudiante abre pluma (FORBIDDEN)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status 401\", () => pm.response.to.have.status(401));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" },
+							{ "key": "Authorization", "value": "Bearer {{student_token}}" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"id_vehicle\": {{vehicle_id}}\n}"
+						},
+						"url": { "raw": "{{base_url}}/access/open", "host": ["{{base_url}}"], "path": ["access", "open"] }
+					}
+				}
+			]
+		}
+	]
+}

@@ -1,1 +1,3 @@
-frontend_
+/frontend_
+/backend/target
+backend/.env

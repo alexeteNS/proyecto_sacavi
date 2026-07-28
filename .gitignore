@@ -1,3 +1,7 @@
-/frontend_
-/backend/target
+**/target/
+frontend_
+backend/target
+backend/migration/target
+
 backend/.env
+

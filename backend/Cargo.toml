@@ -7,7 +7,7 @@ edition = "2024"
 #password hash
 argon2 = { version = "0.5.3", features = ["rand"] }
 #apirest
-axum = "0.8.9"
+axum = {version = "0.8.9", features=["ws"]}
 #dotenv
 dotenvy = "0.15.7"
 #jsonwebtokens

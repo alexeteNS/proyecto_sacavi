@@ -12,7 +12,19 @@ mod services;
 mod state;
 mod utils;
 
-use axum::Router;
+use std::net::SocketAddr;
+
+use axum::{
+    Router,
+    extract::{
+        State,
+        ws::{
+            Message::{self, Text},
+            WebSocket, WebSocketUpgrade,
+        },
+    },
+    response::Response,
+};
 use sea_orm_migration::MigratorTrait;
 use tower_http::cors::{Any, CorsLayer};
 
@@ -90,8 +102,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .nest("/device", routes::device_routes::route_device())
         .layer(cors)
         .with_state(state_app);
+    let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
 
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
+    let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
 
     println!("Servidor escuchando en: {}", &url);
 
@@ -127,5 +140,17 @@ async fn seed_admin_user(db: &sea_orm::DatabaseConnection) {
         .await
         .unwrap();
         println!("Admin user seeded: admin@sacavi.edu / admin123");
+    }
+}
+
+async fn websocket_handler(ws: WebSocketUpgrade, State(state): State<AppState>) -> Response {
+    ws.on_upgrade(move |socket| handle_socket(socket, state))
+}
+
+async fn handle_socket(mut socket: WebSocket, state: AppState) {
+    while let Some(msg) = socket.recv().await {
+        if let Ok(Message::Text(texto)) = msg {
+            println!("Recibimos algo alv");
+        }
     }
 }

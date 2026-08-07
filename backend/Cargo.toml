@@ -45,6 +45,10 @@ uuid = { version = "1", features = ["v4"] }
 #validator data
 validator = "0.20.0"
 reqwest = "0.13.4"
+dashmap = "6.2.1"
+futures-util = "0.3.33"
+tokio-tungstenite = "0.30.0"
+url = "2.5.8"
 #request
 
 [target.x86_64-unknown-linux-gnu]

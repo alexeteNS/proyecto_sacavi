@@ -13,6 +13,11 @@ pub struct Model {
     pub status: String,
     pub last_connection: Option<chrono::NaiveDateTime>,
     pub created_at: chrono::NaiveDateTime,
+    pub firmware: Option<String>,
+    pub version: Option<String>,
+    pub ip_address: Option<String>,
+    pub mac_address: Option<String>,
+    pub uptime_seconds: Option<i64>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, EnumIter, DeriveRelation)]

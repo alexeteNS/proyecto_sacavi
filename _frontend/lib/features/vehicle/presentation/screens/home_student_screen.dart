@@ -43,25 +43,32 @@ class _HomeStudentScreenState extends State<HomeStudentScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
-        child: CustomScrollView(
-          slivers: [
-            SliverToBoxAdapter(child: _buildHeader(name, initial)),
-            SliverPadding(
-              padding: const EdgeInsets.all(16),
-              sliver: SliverList(
-                delegate: SliverChildListDelegate([
-                  _buildSystemStatus(),
-                  const SizedBox(height: 16),
-                  _buildQrCard(),
-                  const SizedBox(height: 20),
-                  _buildVehiclesSection(),
-                  const SizedBox(height: 20),
-                  _buildRecentHistory(),
-                  const SizedBox(height: 20),
-                ]),
+        child: RefreshIndicator(
+          onRefresh: () async {
+            context.read<VehicleBloc>().add(LoadVehicles());
+            context.read<AccessBloc>().add(LoadHistory());
+          },
+          child: CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
+              SliverToBoxAdapter(child: _buildHeader(name, initial)),
+              SliverPadding(
+                padding: const EdgeInsets.all(16),
+                sliver: SliverList(
+                  delegate: SliverChildListDelegate([
+                    _buildSystemStatus(),
+                    const SizedBox(height: 16),
+                    _buildQrCard(),
+                    const SizedBox(height: 20),
+                    _buildVehiclesSection(),
+                    const SizedBox(height: 20),
+                    _buildRecentHistory(),
+                    const SizedBox(height: 20),
+                  ]),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -86,8 +93,7 @@ class _HomeStudentScreenState extends State<HomeStudentScreen> {
               ),
               const SizedBox(height: 2),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.18),
                   borderRadius: BorderRadius.circular(6),
@@ -135,7 +141,8 @@ class _HomeStudentScreenState extends State<HomeStudentScreen> {
         color: AppColors.successBg,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-            color: AppColors.successLight.withValues(alpha: 0.3)),
+          color: AppColors.successLight.withValues(alpha: 0.3),
+        ),
       ),
       child: const Row(
         children: [
@@ -147,9 +154,10 @@ class _HomeStudentScreenState extends State<HomeStudentScreen> {
               Text(
                 'Sistema operativo',
                 style: TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 13,
-                    color: AppColors.success),
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13,
+                  color: AppColors.success,
+                ),
               ),
               Text(
                 'Entrada principal activa',
@@ -178,7 +186,7 @@ class _HomeStudentScreenState extends State<HomeStudentScreen> {
             color: AppColors.primary.withValues(alpha: 0.35),
             blurRadius: 16,
             offset: const Offset(0, 6),
-          )
+          ),
         ],
       ),
       child: Column(
@@ -208,7 +216,8 @@ class _HomeStudentScreenState extends State<HomeStudentScreen> {
                 backgroundColor: Colors.white,
                 foregroundColor: AppColors.primary,
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10)),
+                  borderRadius: BorderRadius.circular(10),
+                ),
                 padding: const EdgeInsets.symmetric(vertical: 12),
               ),
               child: const Text(
@@ -242,9 +251,10 @@ class _HomeStudentScreenState extends State<HomeStudentScreen> {
                   borderRadius: BorderRadius.circular(14),
                   boxShadow: const [
                     BoxShadow(
-                        color: Colors.black12,
-                        blurRadius: 6,
-                        offset: Offset(0, 2))
+                      color: Colors.black12,
+                      blurRadius: 6,
+                      offset: Offset(0, 2),
+                    ),
                   ],
                 ),
                 child: Row(
@@ -255,15 +265,12 @@ class _HomeStudentScreenState extends State<HomeStudentScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(v.displayName,
-                              style: AppTextStyles.bodyBold),
-                          Text(v.displayInfo,
-                              style: AppTextStyles.caption),
+                          Text(v.displayName, style: AppTextStyles.bodyBold),
+                          Text(v.displayInfo, style: AppTextStyles.caption),
                         ],
                       ),
                     ),
-                    const Icon(Icons.chevron_right,
-                        color: AppColors.textLight),
+                    const Icon(Icons.chevron_right, color: AppColors.textLight),
                   ],
                 ),
               );
@@ -304,9 +311,10 @@ class _HomeStudentScreenState extends State<HomeStudentScreen> {
                   borderRadius: BorderRadius.circular(14),
                   boxShadow: const [
                     BoxShadow(
-                        color: Colors.black12,
-                        blurRadius: 6,
-                        offset: Offset(0, 2))
+                      color: Colors.black12,
+                      blurRadius: 6,
+                      offset: Offset(0, 2),
+                    ),
                   ],
                 ),
                 child: Column(
@@ -318,27 +326,29 @@ class _HomeStudentScreenState extends State<HomeStudentScreen> {
                       children: [
                         if (i > 0)
                           const Divider(
-                              height: 1,
-                              indent: 16,
-                              endIndent: 16,
-                              color: AppColors.divider),
+                            height: 1,
+                            indent: 16,
+                            endIndent: 16,
+                            color: AppColors.divider,
+                          ),
                         Padding(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 14, vertical: 11),
+                            horizontal: 14,
+                            vertical: 11,
+                          ),
                           child: Row(
                             children: [
                               SizedBox(
                                 width: 80,
                                 child: Text(
                                   '${DateFormatter.toDate(dt)}\n${DateFormatter.toTime(dt)}',
-                                  style: AppTextStyles.caption
-                                      .copyWith(fontSize: 11),
+                                  style: AppTextStyles.caption.copyWith(
+                                    fontSize: 11,
+                                  ),
                                 ),
                               ),
                               const SizedBox(width: 8),
-                              Expanded(
-                                child: AccessTypeLabel(type: r.type),
-                              ),
+                              Expanded(child: AccessTypeLabel(type: r.type)),
                               Text(
                                 r.status,
                                 style: TextStyle(
@@ -358,8 +368,10 @@ class _HomeStudentScreenState extends State<HomeStudentScreen> {
                 ),
               );
             }
-            return const Text('Sin historial reciente',
-                style: AppTextStyles.caption);
+            return const Text(
+              'Sin historial reciente',
+              style: AppTextStyles.caption,
+            );
           },
         ),
       ],

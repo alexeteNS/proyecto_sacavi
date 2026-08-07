@@ -23,6 +23,11 @@ impl IDeviceService for DeviceService {
             device_key: device.device_key,
             status: device.status,
             last_connection: device.last_connection.map(|t| t.to_string()),
+            firmware: device.firmware,
+            version: device.version,
+            ip_address: device.ip_address,
+            mac_address: device.mac_address,
+            uptime_seconds: device.uptime_seconds,
         })
     }
 

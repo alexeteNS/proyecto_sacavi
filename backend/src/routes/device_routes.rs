@@ -1,6 +1,9 @@
 use crate::controllers::device_controller;
 use crate::state::AppState;
-use axum::{routing::{get, post}, Router};
+use axum::{
+    Router,
+    routing::{get, post},
+};
 
 pub fn route_device() -> Router<AppState> {
     Router::<AppState>::new()

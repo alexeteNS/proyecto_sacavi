@@ -9,8 +9,18 @@ pub struct VehicleService {
 }
 
 impl IVehicleService for VehicleService {
-    async fn create(&self, dto: VehicleCreateDto, user_id: i64) -> Result<VehicleResponseDto, String> {
-        if self.vehicle_repository.find_by_plate(dto.plate.clone()).await.map_err(|e| e.to_string())?.is_some() {
+    async fn create(
+        &self,
+        dto: VehicleCreateDto,
+        user_id: i64,
+    ) -> Result<VehicleResponseDto, String> {
+        if self
+            .vehicle_repository
+            .find_by_plate(dto.plate.clone())
+            .await
+            .map_err(|e| e.to_string())?
+            .is_some()
+        {
             return Err("Plate already registered".to_string());
         }
 

@@ -75,4 +75,14 @@ impl IUserRepository for UserRepository {
         user::Entity::delete_by_id(id_user).exec(&self.db).await?;
         Ok(())
     }
+
+    async fn update_password(&self, id_user: i64, new_hash: String) -> Result<(), DbErr> {
+        let user: Option<user::Model> = user::Entity::find_by_id(id_user).one(&self.db).await?;
+        let mut user: user::ActiveModel = user
+            .ok_or(DbErr::RecordNotFound("User not found".to_string()))?
+            .into();
+        user.hash_password = Set(new_hash);
+        user.update(&self.db).await?;
+        Ok(())
+    }
 }

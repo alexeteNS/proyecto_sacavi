@@ -9,6 +9,7 @@ pub struct ApiError {
 }
 
 impl ApiError {
+    #[allow(dead_code)]
     pub fn new(message: impl Into<String>) -> Self {
         Self {
             success: false,

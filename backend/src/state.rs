@@ -10,4 +10,9 @@ pub struct AppState {
     pub device_service: device_service::DeviceService,
     pub role_repository: RoleRepository,
     pub log_repository: LogRepository,
+    pub ws_manager: std::sync::Arc<crate::services::websocket_manager::WebSocketManager>,
+    pub dashboard_hub: std::sync::Arc<crate::services::dashboard_hub::DashboardHub>,
+    pub vehicle_request_service: crate::services::vehicle_request_service::VehicleRequestService,
+    pub dashboard_service: crate::services::dashboard_service::DashboardService,
+    pub log_service: crate::services::log_service::LogService,
 }

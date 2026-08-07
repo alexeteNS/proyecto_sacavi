@@ -1,4 +1,5 @@
 pub mod access_routes;
+pub mod admin_routes;
 pub mod device_routes;
 pub mod qr_routes;
 pub mod register_routes;

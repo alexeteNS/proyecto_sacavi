@@ -8,8 +8,13 @@ pub struct Model {
     pub id: i64,
     pub id_user: i64,
     pub plate: String,
+    pub brand: String,
+    pub model: String,
+    pub color: String,
+    /// PENDIENTE | EN_REVISION | APROBADO | RECHAZADO
     pub status: String,
     pub created_at: chrono::NaiveDateTime,
+    pub updated_at: Option<chrono::NaiveDateTime>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, EnumIter, DeriveRelation)]

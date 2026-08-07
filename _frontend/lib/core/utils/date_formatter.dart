@@ -10,16 +10,20 @@ class DateFormatter {
   static final _isoFormat = DateFormat("yyyy-MM-dd'T'HH:mm:ss");
   static final _isoFormat2 = DateFormat("yyyy-MM-dd HH:mm:ss");
 
-  /// Convierte el string ISO8601 del backend a DateTime.
-  /// El backend puede devolver "2026-07-27T10:30:00" o "2026-07-27 10:30:00".
+  /// Convierte el string del backend a DateTime local.
+  /// El backend guarda en UTC sin marcador de zona ("2026-07-27T10:30:00"
+  /// o "2026-07-27 10:30:00"), por lo que se parsea como UTC y se
+  /// convierte a la zona horaria del dispositivo.
   static DateTime parse(String raw) {
     try {
-      return _isoFormat.parse(raw);
+      return _isoFormat.parse(raw, true).toLocal();
     } catch (_) {
       try {
-        return _isoFormat2.parse(raw);
+        return _isoFormat2.parse(raw, true).toLocal();
       } catch (_) {
-        return DateTime.tryParse(raw) ?? DateTime.now();
+        final parsed = DateTime.tryParse(raw);
+        if (parsed == null) return DateTime.now();
+        return parsed.isUtc ? parsed.toLocal() : parsed;
       }
     }
   }

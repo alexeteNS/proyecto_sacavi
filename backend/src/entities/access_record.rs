@@ -14,4 +14,29 @@ pub struct Model {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, EnumIter, DeriveRelation)]
-pub enum Relation {}
+pub enum Relation {
+    #[sea_orm(
+        belongs_to = "super::vehicle::Entity",
+        from = "Column::IdVehicle",
+        to = "super::vehicle::Column::Id"
+    )]
+    Vehicle,
+    #[sea_orm(
+        belongs_to = "super::device::Entity",
+        from = "Column::IdDevice",
+        to = "super::device::Column::Id"
+    )]
+    Device,
+}
+
+impl Related<super::vehicle::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::Vehicle.def()
+    }
+}
+
+impl Related<super::device::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::Device.def()
+    }
+}

@@ -5,10 +5,10 @@ import 'features/auth/presentation/bloc/auth_bloc.dart';
 import 'features/auth/presentation/bloc/auth_state.dart';
 import 'features/auth/presentation/screens/splash_screen.dart';
 import 'features/auth/presentation/screens/login_screen.dart';
-import 'features/auth/presentation/screens/register_screen.dart';
 import 'features/auth/presentation/screens/student_shell.dart';
 import 'features/auth/presentation/screens/guard_shell.dart';
 import 'features/auth/presentation/screens/admin_shell.dart';
+import 'features/admin/presentation/screens/access_details_screen.dart';
 
 // ─── Rutas nombradas ──────────────────────────────────────────────────────────
 
@@ -16,7 +16,6 @@ class AppRoutes {
   AppRoutes._();
   static const String splash = '/';
   static const String login = '/login';
-  static const String register = '/register';
   static const String student = '/student';
   static const String guard = '/guard';
   static const String admin = '/admin';
@@ -31,8 +30,7 @@ GoRouter createRouter(AuthBloc authBloc) {
     redirect: (context, state) {
       final authState = authBloc.state;
       final isOnSplash = state.matchedLocation == AppRoutes.splash;
-      final isOnAuth = state.matchedLocation == AppRoutes.login ||
-          state.matchedLocation == AppRoutes.register;
+      final isOnAuth = state.matchedLocation == AppRoutes.login;
 
       // Aún cargando — quedarse en splash
       if (authState is AuthInitial || authState is AuthLoading) {
@@ -42,11 +40,6 @@ GoRouter createRouter(AuthBloc authBloc) {
       // No autenticado → login
       if (authState is AuthUnauthenticated || authState is AuthError) {
         return isOnAuth ? null : AppRoutes.login;
-      }
-
-      // Registro exitoso → login
-      if (authState is AuthRegistered) {
-        return AppRoutes.login;
       }
 
       // Autenticado → Shell según rol
@@ -72,10 +65,6 @@ GoRouter createRouter(AuthBloc authBloc) {
         builder: (_, __) => const LoginScreen(),
       ),
       GoRoute(
-        path: AppRoutes.register,
-        builder: (_, __) => const RegisterScreen(),
-      ),
-      GoRoute(
         path: AppRoutes.student,
         builder: (_, __) => const StudentShell(),
       ),
@@ -86,9 +75,22 @@ GoRouter createRouter(AuthBloc authBloc) {
       GoRoute(
         path: AppRoutes.admin,
         builder: (_, __) => const AdminShell(),
+        routes: [
+          GoRoute(
+            path: 'access/:id',
+            builder: (context, state) {
+              final record = state.extra as dynamic; // AccessHistoryModel
+              return _accessDetailsBuilder(record);
+            },
+          ),
+        ],
       ),
     ],
   );
+}
+
+Widget _accessDetailsBuilder(dynamic record) {
+  return AccessDetailsScreen(record: record);
 }
 
 // ─── Notifier para que GoRouter reaccione al AuthBloc ─────────────────────────

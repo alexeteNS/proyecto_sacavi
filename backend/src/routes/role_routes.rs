@@ -1,8 +1,10 @@
 use crate::controllers::role_controller;
 use crate::state::AppState;
-use axum::{routing::get, Router};
+use axum::{Router, routing::get};
 
 pub fn route_role() -> Router<AppState> {
-    Router::<AppState>::new()
-        .route("/{id}/permissions", get(role_controller::get_role_permissions))
+    Router::<AppState>::new().route(
+        "/{id}/permissions",
+        get(role_controller::get_role_permissions),
+    )
 }

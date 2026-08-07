@@ -42,6 +42,11 @@ class _QrScreenState extends State<QrScreen> {
     });
   }
 
+  void _regenerateQr() {
+    _startTimer();
+    context.read<QrBloc>().add(GenerateQr());
+  }
+
   @override
   void dispose() {
     _timer?.cancel();
@@ -51,7 +56,9 @@ class _QrScreenState extends State<QrScreen> {
   @override
   Widget build(BuildContext context) {
     final progress = _timeLeft / 30.0;
-    final color = progress > 0.5 ? Colors.green : (progress > 0.2 ? Colors.orange : Colors.red);
+    final color = progress > 0.5
+        ? Colors.green
+        : (progress > 0.2 ? Colors.orange : Colors.red);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Acceso QR')),
@@ -76,8 +83,12 @@ class _QrScreenState extends State<QrScreen> {
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: const [
-                          BoxShadow(color: Colors.black12, blurRadius: 10, spreadRadius: 2)
-                        ]
+                          BoxShadow(
+                            color: Colors.black12,
+                            blurRadius: 10,
+                            spreadRadius: 2,
+                          ),
+                        ],
                       ),
                       child: QrImageView(
                         data: state.qrToken.token,
@@ -96,19 +107,44 @@ class _QrScreenState extends State<QrScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  Text('Actualizando en $_timeLeft s', style: AppTextStyles.body),
+                  Text(
+                    'Actualizando en $_timeLeft s',
+                    style: AppTextStyles.body,
+                  ),
+                  const SizedBox(height: 32),
+                  ElevatedButton.icon(
+                    onPressed: _regenerateQr,
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Regenerar QR'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
+                    ),
+                  ),
                   const SizedBox(height: 32),
                   const Card(
                     child: Padding(
                       padding: EdgeInsets.all(16),
-                      child: Text('Este código es personal e intransferible.', style: TextStyle(color: Colors.grey)),
+                      child: Text(
+                        'Este código es personal e intransferible.',
+                        style: TextStyle(color: Colors.grey),
+                      ),
                     ),
-                  )
+                  ),
                 ],
               ),
             );
           } else if (state is QrError) {
-            return Center(child: Text(state.message, style: const TextStyle(color: Colors.red)));
+            return Center(
+              child: Text(
+                state.message,
+                style: const TextStyle(color: Colors.red),
+              ),
+            );
           }
           return const SizedBox();
         },

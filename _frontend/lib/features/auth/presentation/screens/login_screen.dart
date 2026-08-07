@@ -69,8 +69,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   _buildHeader(),
                   const SizedBox(height: 40),
                   _buildForm(),
-                  const SizedBox(height: 24),
-                  _buildRegisterLink(),
                   const SizedBox(height: 40),
                 ],
               ),
@@ -214,25 +212,6 @@ class _LoginScreenState extends State<LoginScreen> {
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildRegisterLink() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        const Text('¿No tienes cuenta?', style: AppTextStyles.body),
-        TextButton(
-          onPressed: () => context.push(AppRoutes.register),
-          child: const Text(
-            'Registrarse',
-            style: TextStyle(
-              fontWeight: FontWeight.w700,
-              color: AppColors.primary,
-            ),
-          ),
-        ),
-      ],
     );
   }
 }

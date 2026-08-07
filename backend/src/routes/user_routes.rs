@@ -1,7 +1,10 @@
 use crate::controllers::{role_controller, user_controller};
 use crate::middlewares::auth::auth_middleware;
 use crate::state::AppState;
-use axum::{middleware, routing::{get, post, put}, Router};
+use axum::{
+    Router, middleware,
+    routing::{get, post, put},
+};
 
 pub fn route_user() -> Router<AppState> {
     let public_routes = Router::<AppState>::new()

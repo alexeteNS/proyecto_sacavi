@@ -37,7 +37,10 @@ pub async fn change_user_role(
     Json(dto): Json<role_dtos::ChangeRoleDto>,
 ) -> Result<Json<user_dtos::UserResponseDto>, (StatusCode, String)> {
     if claims.role != "ADMIN" {
-        return Err((StatusCode::FORBIDDEN, "Only ADMIN can change roles".to_string()));
+        return Err((
+            StatusCode::FORBIDDEN,
+            "Only ADMIN can change roles".to_string(),
+        ));
     }
 
     let user = state

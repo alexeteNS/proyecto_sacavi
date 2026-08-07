@@ -1,11 +1,13 @@
 use crate::controllers::access_controller;
 use crate::middlewares::auth::auth_middleware;
 use crate::state::AppState;
-use axum::{middleware, routing::{get, post}, Router};
+use axum::{
+    Router, middleware,
+    routing::{get, post},
+};
 
 pub fn route_access() -> Router<AppState> {
-    let public_routes = Router::<AppState>::new()
-        .route("/scan", post(access_controller::scan_qr));
+    let public_routes = Router::<AppState>::new().route("/scan", post(access_controller::scan_qr));
 
     let protected_routes = Router::<AppState>::new()
         .route("/history", get(access_controller::get_history))

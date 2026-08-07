@@ -3,6 +3,7 @@ import 'package:get_it/get_it.dart';
 
 import 'core/network/api_client.dart';
 import 'core/storage/secure_storage.dart';
+import 'core/network/dashboard_ws_service.dart';
 
 
 // Auth
@@ -34,6 +35,11 @@ import 'features/profile/presentation/bloc/profile_bloc.dart';
 import 'features/admin/data/datasources/admin_remote_datasource.dart';
 import 'features/admin/data/repositories/admin_repository_impl.dart';
 import 'features/admin/presentation/bloc/admin_bloc.dart';
+import 'features/admin/presentation/bloc/dashboard/admin_dashboard_bloc.dart';
+import 'features/admin/presentation/bloc/vehicle_request/admin_vehicle_request_bloc.dart';
+import 'features/admin/presentation/bloc/user/admin_user_bloc.dart';
+import 'features/admin/presentation/bloc/log/admin_log_bloc.dart';
+import 'features/admin/presentation/bloc/access_history/admin_access_history_bloc.dart';
 
 final GetIt sl = GetIt.instance;
 
@@ -49,6 +55,10 @@ Future<void> setupDependencies() async {
 
   sl.registerLazySingleton<ApiClient>(
     () => ApiClient(sl<SecureStorageService>()),
+  );
+
+  sl.registerLazySingleton<DashboardWsService>(
+    () => DashboardWsService(storage: sl<SecureStorageService>()),
   );
 
   // ─── Auth ─────────────────────────────────────────────────────────────────
@@ -149,5 +159,28 @@ Future<void> setupDependencies() async {
 
   sl.registerFactory<AdminBloc>(
     () => AdminBloc(repository: sl<AdminRepositoryImpl>()),
+  );
+
+  sl.registerFactory<AdminDashboardBloc>(
+    () => AdminDashboardBloc(
+      repository: sl<AdminRepositoryImpl>(),
+      wsService: sl<DashboardWsService>(),
+    ),
+  );
+
+  sl.registerFactory<AdminVehicleRequestBloc>(
+    () => AdminVehicleRequestBloc(repository: sl<AdminRepositoryImpl>()),
+  );
+
+  sl.registerFactory<AdminUserBloc>(
+    () => AdminUserBloc(repository: sl<AdminRepositoryImpl>()),
+  );
+
+  sl.registerFactory<AdminLogBloc>(
+    () => AdminLogBloc(repository: sl<AdminRepositoryImpl>()),
+  );
+
+  sl.registerFactory<AdminAccessHistoryBloc>(
+    () => AdminAccessHistoryBloc(adminRepository: sl<AdminRepositoryImpl>()),
   );
 }

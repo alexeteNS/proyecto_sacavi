@@ -13,6 +13,8 @@ mod m20260727_020950_create_qr_tokens;
 mod m20260727_020960_create_devices;
 mod m20260727_020970_add_device_id_to_access_records;
 mod m20260727_020980_create_system_logs;
+mod m20260807_021000_extend_vehicle_requests;
+mod m20260807_021010_extend_devices;
 
 pub struct Migrator;
 
@@ -33,6 +35,8 @@ impl MigratorTrait for Migrator {
             Box::new(m20260727_020960_create_devices::Migration),
             Box::new(m20260727_020970_add_device_id_to_access_records::Migration),
             Box::new(m20260727_020980_create_system_logs::Migration),
+            Box::new(m20260807_021000_extend_vehicle_requests::Migration),
+            Box::new(m20260807_021010_extend_devices::Migration),
         ]
     }
 }

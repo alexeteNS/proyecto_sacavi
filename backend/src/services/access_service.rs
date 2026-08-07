@@ -19,10 +19,16 @@ pub struct AccessService {
     pub qr_service: QrService,
     pub device_service: DeviceService,
     pub log_repository: LogRepository,
+    pub ws_manager: std::sync::Arc<crate::services::websocket_manager::WebSocketManager>,
+    pub dashboard_hub: std::sync::Arc<crate::services::dashboard_hub::DashboardHub>,
 }
 
 impl IAccessService for AccessService {
-    async fn scan_qr(&self, token: String, device_id: Option<i64>) -> Result<ScanResponseDto, String> {
+    async fn scan_qr(
+        &self,
+        token: String,
+        device_id: Option<i64>,
+    ) -> Result<ScanResponseDto, String> {
         let device_str = device_id.map(|d| d.to_string());
 
         if let Some(did) = device_id {
@@ -80,8 +86,42 @@ impl IAccessService for AccessService {
 
         let _ = self
             .log_repository
-            .log(Some(user_id), "QR_ACCEPTED", device_str.as_deref(), "SUCCESS")
+            .log(
+                Some(user_id),
+                "QR_ACCEPTED",
+                device_str.as_deref(),
+                "SUCCESS",
+            )
             .await;
+
+        if let Some(did) = device_id {
+            tracing::info!(
+                "[SCAN_QR] Intentando abrir pluma para dispositivo ID: {}",
+                did
+            );
+            if let Err(e) = self.ws_manager.open_gate(did).await {
+                tracing::error!(
+                    "[SCAN_QR] Error enviando comando WS al dispositivo {}: {}",
+                    did,
+                    e
+                );
+            } else {
+                tracing::info!(
+                    "[SCAN_QR] Comando OPEN_GATE enviado exitosamente por WS a dispositivo {}",
+                    did
+                );
+            }
+        } else {
+            tracing::warn!(
+                "[SCAN_QR] ⚠️ ALERTA: device_id es NONE en la petición POST /access/scan. No se enviará ningún comando WebSocket al ESP32."
+            );
+        }
+
+        self.dashboard_hub.broadcast(serde_json::json!({
+            "event": "new_access",
+            "vehicle_id": vehicle_id,
+            "type": record_type
+        }));
 
         Ok(ScanResponseDto {
             allowed: true,
@@ -89,7 +129,11 @@ impl IAccessService for AccessService {
         })
     }
 
-    async fn get_history(&self, user_id: i64, _user_role: &str) -> Result<Vec<AccessResponseDto>, String> {
+    async fn get_history(
+        &self,
+        user_id: i64,
+        _user_role: &str,
+    ) -> Result<Vec<AccessResponseDto>, String> {
         let vehicles = self
             .vehicle_repository
             .find_by_user(user_id)
@@ -107,10 +151,8 @@ impl IAccessService for AccessService {
             .await
             .map_err(|e| e.to_string())?;
 
-        let vehicle_map: std::collections::HashMap<i64, String> = vehicles
-            .into_iter()
-            .map(|v| (v.id, v.plate))
-            .collect();
+        let vehicle_map: std::collections::HashMap<i64, String> =
+            vehicles.into_iter().map(|v| (v.id, v.plate)).collect();
 
         Ok(records
             .into_iter()
@@ -124,7 +166,12 @@ impl IAccessService for AccessService {
             .collect())
     }
 
-    async fn open_gate(&self, id_vehicle: i64, user_id: i64, user_role: &str) -> Result<AccessResponseDto, String> {
+    async fn open_gate(
+        &self,
+        id_vehicle: i64,
+        user_id: i64,
+        user_role: &str,
+    ) -> Result<AccessResponseDto, String> {
         if user_role != "ADMIN" && user_role != "GUARDIA" {
             let _ = self
                 .log_repository
@@ -150,6 +197,12 @@ impl IAccessService for AccessService {
             .log_repository
             .log(Some(user_id), "GATE_OPEN_MANUAL", None, "SUCCESS")
             .await;
+
+        self.dashboard_hub.broadcast(serde_json::json!({
+            "event": "new_access",
+            "vehicle_id": id_vehicle,
+            "type": "MANUAL"
+        }));
 
         Ok(AccessResponseDto {
             id_record: record.id,

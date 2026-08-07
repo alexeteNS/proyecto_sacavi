@@ -1,3 +1,4 @@
+#![allow(dead_code, unused_variables, clippy::collapsible_if, unused_imports)]
 mod controllers;
 mod databases;
 mod dtos;
@@ -39,6 +40,7 @@ use crate::{
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    tracing_subscriber::fmt::init();
     dotenvy::dotenv().ok();
     let body = reqwest::get("http://localhost:4040/api/tunnels")
         .await?
@@ -58,23 +60,58 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let access_repository = access_repository::AccessRepository { db: db.clone() };
     let role_repository = role_repository::RoleRepository { db: db.clone() };
     let device_repository = device_repository::DeviceRepository { db: db.clone() };
-    let log_repository = log_repository::LogRepository { db };
+    let log_repository = log_repository::LogRepository { db: db.clone() };
 
     let user_service = user_service::UserService {
-        user_repository,
+        user_repository: user_repository.clone(),
+        vehicle_repository: vehicle_repository.clone(),
         log_repository: log_repository.clone(),
     };
     let qr_service = qr_service::QrService { qr_repository };
     let vehicle_service = vehicle_service::VehicleService {
         vehicle_repository: vehicle_repository.clone(),
     };
-    let device_service = device_service::DeviceService { device_repository };
+    let device_service = device_service::DeviceService {
+        device_repository: device_repository.clone(),
+    };
+    let ws_manager =
+        std::sync::Arc::new(crate::services::websocket_manager::WebSocketManager::new());
+    crate::services::websocket_manager::WebSocketManager::start_health_checker(ws_manager.clone());
+
+    let vehicle_request_repository =
+        crate::repositories::vehicle_request_repository::VehicleRequestRepository {
+            db: db.clone(),
+        };
+
+    let dashboard_hub = std::sync::Arc::new(crate::services::dashboard_hub::DashboardHub::new());
+
+    let vehicle_request_service = crate::services::vehicle_request_service::VehicleRequestService {
+        vehicle_request_repository: vehicle_request_repository.clone(),
+        vehicle_repository: vehicle_repository.clone(),
+        log_repository: log_repository.clone(),
+        dashboard_hub: dashboard_hub.clone(),
+    };
+
+    let dashboard_service = crate::services::dashboard_service::DashboardService {
+        user_repository: user_repository.clone(),
+        vehicle_repository: vehicle_repository.clone(),
+        vehicle_request_repository: vehicle_request_repository.clone(),
+        access_repository: access_repository.clone(),
+        device_repository: device_repository.clone(),
+    };
+
+    let log_service = crate::services::log_service::LogService {
+        log_repository: log_repository.clone(),
+    };
+
     let access_service = access_service::AccessService {
         access_repository,
         vehicle_repository,
         qr_service: qr_service.clone(),
         device_service: device_service.clone(),
         log_repository: log_repository.clone(),
+        ws_manager: ws_manager.clone(),
+        dashboard_hub: dashboard_hub.clone(),
     };
 
     let cors = CorsLayer::new()
@@ -90,6 +127,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         device_service,
         role_repository,
         log_repository,
+        ws_manager,
+        dashboard_hub,
+        vehicle_request_service,
+        dashboard_service,
+        log_service,
     };
 
     let app = Router::<AppState>::new()
@@ -100,15 +142,31 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .nest("/access", routes::access_routes::route_access())
         .nest("/roles", routes::role_routes::route_role())
         .nest("/device", routes::device_routes::route_device())
+        .nest("/admin", routes::admin_routes::route_admin())
+        .route(
+            "/ws",
+            axum::routing::get(crate::controllers::websocket_controller::websocket_handler),
+        )
+        .route(
+            "/ws/dashboard",
+            axum::routing::get(
+                crate::controllers::dashboard_ws_controller::dashboard_websocket_handler,
+            ),
+        )
         .layer(cors)
         .with_state(state_app);
     let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
 
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
 
-    println!("Servidor escuchando en: {}", &url);
+    println!("Servidor escuchando en: {}", url);
 
-    axum::serve(listener, app).await.unwrap();
+    axum::serve(
+        listener,
+        app.into_make_service_with_connect_info::<SocketAddr>(),
+    )
+    .await
+    .unwrap();
     Ok(())
 }
 
@@ -140,17 +198,5 @@ async fn seed_admin_user(db: &sea_orm::DatabaseConnection) {
         .await
         .unwrap();
         println!("Admin user seeded: admin@sacavi.edu / admin123");
-    }
-}
-
-async fn websocket_handler(ws: WebSocketUpgrade, State(state): State<AppState>) -> Response {
-    ws.on_upgrade(move |socket| handle_socket(socket, state))
-}
-
-async fn handle_socket(mut socket: WebSocket, state: AppState) {
-    while let Some(msg) = socket.recv().await {
-        if let Ok(Message::Text(texto)) = msg {
-            println!("Recibimos algo alv");
-        }
     }
 }

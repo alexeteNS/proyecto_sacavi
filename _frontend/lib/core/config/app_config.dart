@@ -6,7 +6,7 @@ class AppConfig {
   // Para emulador Android: 10.0.2.2
   // Para dispositivo físico en la misma red: IP del servidor
   // Para iOS simulator: 127.0.0.1
-  static const String baseUrl = 'https://046d-201-143-7-92.ngrok-free.app';
+  static const String baseUrl = 'https://6c78-177-226-64-4.ngrok-free.app';
   
 
   static const Duration connectTimeout = Duration(seconds: 10);

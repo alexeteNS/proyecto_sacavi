@@ -64,10 +64,12 @@ class SacaviBottomNav extends StatelessWidget {
         BottomNavigationBarItem(
             icon: Icon(Icons.people_rounded, size: 22), label: 'Usuarios'),
         BottomNavigationBarItem(
-            icon: Icon(Icons.developer_board_rounded, size: 22),
-            label: 'Dispositivos'),
+            icon: Icon(Icons.pending_actions_rounded, size: 22),
+            label: 'Solicitudes'),
         BottomNavigationBarItem(
-            icon: Icon(Icons.bar_chart_rounded, size: 22), label: 'Reportes'),
+            icon: Icon(Icons.history_rounded, size: 22), label: 'Historial'),
+        BottomNavigationBarItem(
+            icon: Icon(Icons.developer_board_rounded, size: 22), label: 'Disp.'),
         BottomNavigationBarItem(
             icon: Icon(Icons.settings_rounded, size: 22), label: 'Ajustes'),
       ],

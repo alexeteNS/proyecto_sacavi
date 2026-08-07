@@ -3,13 +3,15 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../injection_container.dart' as di;
 import '../../../../shared/widgets/shared_widgets.dart';
 import '../../../admin/presentation/bloc/admin_bloc.dart';
-import '../../../admin/presentation/bloc/admin_event.dart';
 import '../../../admin/presentation/screens/admin_dashboard_screen.dart';
 import '../../../admin/presentation/screens/users_management_screen.dart';
+import '../../../admin/presentation/screens/vehicle_requests_screen.dart';
+import '../../../admin/presentation/screens/admin_access_history_screen.dart';
 import '../../../admin/presentation/screens/devices_screen.dart';
-import '../../../admin/presentation/screens/reports_screen.dart';
 import '../../../admin/presentation/screens/settings_screen.dart';
 import '../../../access/presentation/bloc/access_bloc.dart';
+import '../../../admin/presentation/bloc/access_history/admin_access_history_bloc.dart';
+import '../../../admin/presentation/bloc/access_history/admin_access_history_event.dart';
 
 class AdminShell extends StatefulWidget {
   const AdminShell({super.key});
@@ -24,8 +26,9 @@ class _AdminShellState extends State<AdminShell> {
   final List<Widget> _pages = const [
     AdminDashboardScreen(),
     UsersManagementScreen(),
+    VehicleRequestsScreen(),
+    AdminAccessHistoryScreen(),
     DevicesScreen(),
-    ReportsScreen(),
     SettingsScreen(),
   ];
 
@@ -34,10 +37,13 @@ class _AdminShellState extends State<AdminShell> {
     return MultiBlocProvider(
       providers: [
         BlocProvider<AdminBloc>(
-          create: (_) => di.sl<AdminBloc>()..add(LoadAdminDashboard()),
+          create: (_) => di.sl<AdminBloc>(),
         ),
         BlocProvider<AccessBloc>(
           create: (_) => di.sl<AccessBloc>(),
+        ),
+        BlocProvider<AdminAccessHistoryBloc>(
+          create: (_) => di.sl<AdminAccessHistoryBloc>()..add(const LoadAccessHistory())..add(LoadAccessStats()),
         ),
       ],
       child: Scaffold(

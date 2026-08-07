@@ -25,20 +25,6 @@ class AuthLogin extends AuthEvent {
   List<Object?> get props => [email, password];
 }
 
-/// Disparado cuando el usuario presiona "Registrarse".
-class AuthRegister extends AuthEvent {
-  const AuthRegister({
-    required this.name,
-    required this.email,
-    required this.password,
-  });
-  final String name;
-  final String email;
-  final String password;
-
-  @override
-  List<Object?> get props => [name, email, password];
-}
 
 /// Disparado cuando el usuario cierra sesión.
 class AuthLogout extends AuthEvent {

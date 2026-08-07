@@ -13,4 +13,3 @@ pub struct AccessResponseDto {
 pub struct OpenGateDto {
     pub id_vehicle: i64,
 }
-

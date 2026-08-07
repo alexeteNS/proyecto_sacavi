@@ -8,7 +8,14 @@ pub struct VehicleRepository {
 }
 
 impl IVehicleRepository for VehicleRepository {
-    async fn create(&self, plate: String, brand: String, model: String, color: String, id_user: i64) -> Result<vehicle::Model, DbErr> {
+    async fn create(
+        &self,
+        plate: String,
+        brand: String,
+        model: String,
+        color: String,
+        id_user: i64,
+    ) -> Result<vehicle::Model, DbErr> {
         let v = vehicle::ActiveModel {
             plate: Set(plate),
             brand: Set(brand),
@@ -41,5 +48,24 @@ impl IVehicleRepository for VehicleRepository {
     async fn delete(&self, id: i64) -> Result<(), DbErr> {
         vehicle::Entity::delete_by_id(id).exec(&self.db).await?;
         Ok(())
+    }
+
+    async fn find_all(&self) -> Result<Vec<vehicle::Model>, DbErr> {
+        vehicle::Entity::find().all(&self.db).await
+    }
+
+    async fn count_all(&self) -> Result<i64, DbErr> {
+        vehicle::Entity::find()
+            .count(&self.db)
+            .await
+            .map(|c| c as i64)
+    }
+
+    async fn count_by_user(&self, id_user: i64) -> Result<i64, DbErr> {
+        vehicle::Entity::find()
+            .filter(vehicle::Column::IdUser.eq(id_user))
+            .count(&self.db)
+            .await
+            .map(|c| c as i64)
     }
 }

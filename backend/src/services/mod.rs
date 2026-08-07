@@ -1,5 +1,10 @@
 pub mod access_service;
+pub mod dashboard_hub;
+pub mod dashboard_service;
 pub mod device_service;
+pub mod log_service;
 pub mod qr_service;
 pub mod user_service;
+pub mod vehicle_request_service;
 pub mod vehicle_service;
+pub mod websocket_manager;

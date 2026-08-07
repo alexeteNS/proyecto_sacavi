@@ -34,14 +34,6 @@ class AuthUnauthenticated extends AuthState {
   const AuthUnauthenticated();
 }
 
-/// Registro exitoso — redirigir al Login con mensaje.
-class AuthRegistered extends AuthState {
-  const AuthRegistered(this.message);
-  final String message;
-
-  @override
-  List<Object?> get props => [message];
-}
 
 /// Error de autenticación — mostrar mensaje en pantalla.
 class AuthError extends AuthState {

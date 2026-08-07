@@ -24,4 +24,6 @@ pub trait IUserRepository {
 
     // Eliminar usuario
     async fn delete(&self, id_user: i64) -> Result<(), DbErr>;
+
+    async fn update_password(&self, id_user: i64, new_hash: String) -> Result<(), DbErr>;
 }

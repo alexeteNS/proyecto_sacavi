@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../bloc/access_bloc.dart';
@@ -15,10 +16,24 @@ class HistoryScreen extends StatefulWidget {
 
 class _HistoryScreenState extends State<HistoryScreen> {
   String _filter = 'Todos';
+  Timer? _timer;
 
   @override
   void initState() {
     super.initState();
+    context.read<AccessBloc>().add(LoadHistory());
+    _timer = Timer.periodic(const Duration(seconds: 15), (timer) {
+      if (mounted) context.read<AccessBloc>().add(LoadHistory());
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  void _refresh() {
     context.read<AccessBloc>().add(LoadHistory());
   }
 
@@ -43,35 +58,58 @@ class _HistoryScreenState extends State<HistoryScreen> {
             ),
           ),
           Expanded(
-            child: BlocBuilder<AccessBloc, AccessState>(
-              builder: (context, state) {
-                if (state is AccessLoading) return const Center(child: CircularProgressIndicator());
-                if (state is AccessLoaded) {
-                  final records = state.records.where((r) {
-                    if (_filter == 'Todos') return true;
-                    if (_filter == 'ENTRADA') return r.isEntrada;
-                    if (_filter == 'SALIDA') return r.isSalida;
-                    return true;
-                  }).toList();
-                  if (records.isEmpty) return const Center(child: Text('No hay registros.'));
-
-                  return ListView.builder(
-                    itemCount: records.length,
-                    itemBuilder: (context, index) {
-                      final r = records[index];
-                      return ListTile(
-                        title: Text(r.vehiclePlate),
-                        subtitle: Text('${DateFormatter.toDate(r.parsedDateTime)} ${DateFormatter.toTime(r.parsedDateTime)}'),
-                        trailing: AccessTypeLabel(type: r.type),
+            child: RefreshIndicator(
+              onRefresh: () async => _refresh(),
+              child: BlocBuilder<AccessBloc, AccessState>(
+                builder: (context, state) {
+                  if (state is AccessLoading) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  if (state is AccessLoaded) {
+                    final records = state.records.where((r) {
+                      if (_filter == 'Todos') return true;
+                      if (_filter == 'ENTRADA') return r.isEntrada;
+                      if (_filter == 'SALIDA') return r.isSalida;
+                      return true;
+                    }).toList();
+                    if (records.isEmpty) {
+                      return ListView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        children: const [
+                          SizedBox(
+                            height: 200,
+                            child: Center(child: Text('No hay registros.')),
+                          ),
+                        ],
                       );
-                    },
+                    }
+
+                    return ListView.builder(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      itemCount: records.length,
+                      itemBuilder: (context, index) {
+                        final r = records[index];
+                        return ListTile(
+                          title: Text(r.vehiclePlate),
+                          subtitle: Text(
+                            '${DateFormatter.toDate(r.parsedDateTime)} ${DateFormatter.toTime(r.parsedDateTime)}',
+                          ),
+                          trailing: AccessTypeLabel(type: r.type),
+                        );
+                      },
+                    );
+                  }
+                  if (state is AccessError) {
+                    return Center(child: Text(state.message));
+                  }
+                  return ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    children: const [SizedBox()],
                   );
-                }
-                if (state is AccessError) return Center(child: Text(state.message));
-                return const SizedBox();
-              },
+                },
+              ),
             ),
-          )
+          ),
         ],
       ),
     );

@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../bloc/access_history/admin_access_history_bloc.dart';
 import '../bloc/access_history/admin_access_history_state.dart';
+import '../bloc/access_history/admin_access_history_event.dart';
 import '../../../../core/utils/date_formatter.dart';
 
 class AdminAccessHistoryScreen extends StatelessWidget {
@@ -31,124 +32,131 @@ class _AccessHistoryBody extends StatelessWidget {
           return const Center(child: CircularProgressIndicator());
         }
 
-        return CustomScrollView(
-          slivers: [
-            if (state.stats != null)
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: _buildStatsGrid(context, state),
-                ),
-              ),
-            const SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                child: Text('Últimos Accesos', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              ),
-            ),
-            if (state.history.isEmpty && !state.isLoading)
-              const SliverToBoxAdapter(
-                child: Center(
+        return RefreshIndicator(
+          onRefresh: () async {
+            context.read<AdminAccessHistoryBloc>().add(LoadAccessHistory());
+            context.read<AdminAccessHistoryBloc>().add(LoadAccessStats());
+            await Future.delayed(const Duration(milliseconds: 500));
+          },
+          child: CustomScrollView(
+            slivers: [
+              if (state.stats != null)
+                SliverToBoxAdapter(
                   child: Padding(
-                    padding: EdgeInsets.all(32.0),
-                    child: Text('No hay actividad reciente.', style: TextStyle(color: Colors.grey)),
+                    padding: const EdgeInsets.all(16.0),
+                    child: _buildStatsGrid(context, state),
                   ),
                 ),
+              const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                  child: Text('Últimos Accesos', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                ),
               ),
-            SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  final record = state.history[index];
-                  final formattedTime = DateFormatter.toTime(DateFormatter.parse(record.dateTime));
-                  final isAprobado = record.status == 'APROBADO';
-                  final isEntrada = record.type == 'ENTRADA';
-
-                  return Card(
-                    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      side: BorderSide(color: isAprobado ? Colors.green.withOpacity(0.3) : Colors.red.withOpacity(0.3)),
+              if (state.history.isEmpty && !state.isLoading)
+                const SliverToBoxAdapter(
+                  child: Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(32.0),
+                      child: Text('No hay actividad reciente.', style: TextStyle(color: Colors.grey)),
                     ),
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(12),
-                      onTap: () {
-                        context.push('/admin/access/${record.idRecord}', extra: record);
-                      },
-                      child: Padding(
-                        padding: const EdgeInsets.all(12.0),
-                        child: Row(
-                          children: [
-                            CircleAvatar(
-                              backgroundColor: isAprobado ? Colors.green.withOpacity(0.1) : Colors.red.withOpacity(0.1),
-                              child: Icon(
-                                isEntrada ? Icons.login : (record.type == 'SALIDA' ? Icons.logout : Icons.pan_tool),
-                                color: isAprobado ? Colors.green : Colors.red,
+                  ),
+                ),
+              SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    final record = state.history[index];
+                    final formattedTime = DateFormatter.toTime(DateFormatter.parse(record.dateTime));
+                    final isAprobado = record.status == 'APROBADO';
+                    final isEntrada = record.type == 'ENTRADA';
+
+                    return Card(
+                      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        side: BorderSide(color: isAprobado ? Colors.green.withOpacity(0.3) : Colors.red.withOpacity(0.3)),
+                      ),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(12),
+                        onTap: () {
+                          context.push('/admin/access/${record.idRecord}', extra: record);
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.all(12.0),
+                          child: Row(
+                            children: [
+                              CircleAvatar(
+                                backgroundColor: isAprobado ? Colors.green.withOpacity(0.1) : Colors.red.withOpacity(0.1),
+                                child: Icon(
+                                  isEntrada ? Icons.login : (record.type == 'SALIDA' ? Icons.logout : Icons.pan_tool),
+                                  color: isAprobado ? Colors.green : Colors.red,
+                                ),
                               ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Text(
-                                        '🚗 ${record.vehicle.plate}',
-                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                                      ),
-                                      Text(
-                                        formattedTime,
-                                        style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    record.owner.name,
-                                    style: const TextStyle(fontSize: 14),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Row(
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                        decoration: BoxDecoration(
-                                          color: Colors.blue.withOpacity(0.1),
-                                          borderRadius: BorderRadius.circular(4),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          '🚗 ${record.vehicle.plate}',
+                                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                                         ),
-                                        child: Text(
-                                          record.type,
-                                          style: const TextStyle(fontSize: 10, color: Colors.blue, fontWeight: FontWeight.bold),
+                                        Text(
+                                          formattedTime,
+                                          style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
                                         ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      if (record.device != null)
-                                        Expanded(
+                                      ],
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      record.owner.name,
+                                      style: const TextStyle(fontSize: 14),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: Colors.blue.withOpacity(0.1),
+                                            borderRadius: BorderRadius.circular(4),
+                                          ),
                                           child: Text(
-                                            '📍 ${record.device!.location}',
-                                            style: const TextStyle(fontSize: 11, color: Colors.grey),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
+                                            record.type,
+                                            style: const TextStyle(fontSize: 10, color: Colors.blue, fontWeight: FontWeight.bold),
                                           ),
                                         ),
-                                    ],
-                                  ),
-                                ],
+                                        const SizedBox(width: 8),
+                                        if (record.device != null)
+                                          Expanded(
+                                            child: Text(
+                                              '📍 ${record.device!.location}',
+                                              style: const TextStyle(fontSize: 11, color: Colors.grey),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                  );
-                },
-                childCount: state.history.length,
+                    );
+                  },
+                  childCount: state.history.length,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         );
       },
     );

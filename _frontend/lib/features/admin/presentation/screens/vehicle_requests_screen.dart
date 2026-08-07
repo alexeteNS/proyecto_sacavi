@@ -26,41 +26,47 @@ class VehicleRequestsScreen extends StatelessWidget {
             if (state is AdminVehicleRequestLoading) {
               return const Center(child: CircularProgressIndicator());
             } else if (state is AdminVehicleRequestsLoaded) {
-              return ListView.builder(
-                itemCount: state.requests.length,
-                itemBuilder: (context, index) {
-                  final request = state.requests[index];
-                  return Card(
-                    child: ListTile(
-                      title: Text('${request.brand} ${request.model} - ${request.plate}'),
-                      subtitle: Text('Estado: ${request.status}'),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (request.status == 'PENDIENTE') ...[
-                            IconButton(
-                              icon: const Icon(Icons.remove_red_eye),
-                              color: Colors.orange,
-                              onPressed: () => context.read<AdminVehicleRequestBloc>().add(MarkVehicleRequestInRevision(request.idRequest)),
-                            ),
-                          ],
-                          if (request.status == 'EN_REVISION' || request.status == 'PENDIENTE') ...[
-                            IconButton(
-                              icon: const Icon(Icons.check),
-                              color: Colors.green,
-                              onPressed: () => context.read<AdminVehicleRequestBloc>().add(ApproveVehicleRequest(request.idRequest)),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.close),
-                              color: Colors.red,
-                              onPressed: () => context.read<AdminVehicleRequestBloc>().add(RejectVehicleRequest(request.idRequest)),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                  );
+              return RefreshIndicator(
+                onRefresh: () async {
+                  context.read<AdminVehicleRequestBloc>().add(LoadVehicleRequests());
+                  await Future.delayed(const Duration(milliseconds: 500));
                 },
+                child: ListView.builder(
+                  itemCount: state.requests.length,
+                  itemBuilder: (context, index) {
+                    final request = state.requests[index];
+                    return Card(
+                      child: ListTile(
+                        title: Text('${request.brand} ${request.model} - ${request.plate}'),
+                        subtitle: Text('Estado: ${request.status}'),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (request.status == 'PENDIENTE') ...[
+                              IconButton(
+                                icon: const Icon(Icons.remove_red_eye),
+                                color: Colors.orange,
+                                onPressed: () => context.read<AdminVehicleRequestBloc>().add(MarkVehicleRequestInRevision(request.idRequest)),
+                              ),
+                            ],
+                            if (request.status == 'EN_REVISION' || request.status == 'PENDIENTE') ...[
+                              IconButton(
+                                icon: const Icon(Icons.check),
+                                color: Colors.green,
+                                onPressed: () => context.read<AdminVehicleRequestBloc>().add(ApproveVehicleRequest(request.idRequest)),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.close),
+                                color: Colors.red,
+                                onPressed: () => context.read<AdminVehicleRequestBloc>().add(RejectVehicleRequest(request.idRequest)),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
               );
             }
             return const Center(child: Text('Cargando solicitudes...'));

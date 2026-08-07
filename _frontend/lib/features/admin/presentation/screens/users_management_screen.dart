@@ -36,10 +36,18 @@ class UsersManagementScreen extends StatelessWidget {
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
           ElevatedButton(
             onPressed: () {
+              final roleText = roleCtrl.text.trim().toUpperCase();
+              int roleId = 1; // ESTUDIANTE default
+              if (roleText == 'ADMIN') {
+                roleId = 2;
+              } else if (roleText == 'GUARDIA') {
+                roleId = 3;
+              }
+
               final data = {
                 'name': nameCtrl.text.trim(),
                 'email': emailCtrl.text.trim(),
-                'role': roleCtrl.text.trim(),
+                'id_role': roleId,
               };
               if (isEdit) {
                 context.read<AdminUserBloc>().add(UpdateAdminUser(user!.idUser, data));
@@ -97,9 +105,6 @@ class UsersManagementScreen extends StatelessWidget {
           listener: (context, state) {
             if (state is AdminUserActionSuccess) {
               ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Acción completada: ${state.action}')));
-              if (state.action != 'password_reset') {
-                 context.read<AdminUserBloc>().add(LoadAdminUsers());
-              }
             } else if (state is AdminUserError) {
               ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: ${state.message}')));
             }
@@ -108,36 +113,43 @@ class UsersManagementScreen extends StatelessWidget {
             if (state is AdminUserLoading) {
               return const Center(child: CircularProgressIndicator());
             } else if (state is AdminUsersLoaded) {
-              return ListView.builder(
-                itemCount: state.users.length,
-                itemBuilder: (context, index) {
-                  final user = state.users[index];
-                  return Card(
-                    child: ListTile(
-                      title: Text(user.name),
-                      subtitle: Text('${user.email} - Rol: ${user.role}'),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.lock_reset),
-                            onPressed: () => _showResetPasswordDialog(context, user.idUser),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.edit),
-                            onPressed: () => _showUserDialog(context, user: user),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.delete, color: Colors.red),
-                            onPressed: () {
-                              context.read<AdminUserBloc>().add(DeleteAdminUser(user.idUser));
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
+              return RefreshIndicator(
+                onRefresh: () async {
+                  context.read<AdminUserBloc>().add(LoadAdminUsers());
+                  // Wait a short delay to allow the animation to show, since we rely on state updates.
+                  await Future.delayed(const Duration(milliseconds: 500));
                 },
+                child: ListView.builder(
+                  itemCount: state.users.length,
+                  itemBuilder: (context, index) {
+                    final user = state.users[index];
+                    return Card(
+                      child: ListTile(
+                        title: Text(user.name),
+                        subtitle: Text('${user.email} - Rol: ${user.role}'),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.lock_reset),
+                              onPressed: () => _showResetPasswordDialog(context, user.idUser),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.edit),
+                              onPressed: () => _showUserDialog(context, user: user),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.delete, color: Colors.red),
+                              onPressed: () {
+                                context.read<AdminUserBloc>().add(DeleteAdminUser(user.idUser));
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
               );
             }
             return const Center(child: Text('Cargando usuarios...'));

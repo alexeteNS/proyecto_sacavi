@@ -64,6 +64,7 @@ class AdminUserBloc extends Bloc<AdminUserEvent, AdminUserState> {
     try {
       await repository.resetPassword(event.id, event.newPassword);
       emit(const AdminUserActionSuccess('password_reset'));
+      add(LoadAdminUsers());
     } catch (e) {
       _emitError(e, emit);
     }

@@ -19,7 +19,7 @@ pub fn route_admin() -> Router<AppState> {
         .route("/users/{id}", delete(admin_controller::delete_user))
         .route(
             "/users/{id}/reset-password",
-            post(admin_controller::reset_password),
+            put(admin_controller::reset_password),
         )
         .route("/access/history", get(admin_access_controller::get_access_history))
         .route("/access/stats", get(admin_access_controller::get_access_stats))

@@ -23,24 +23,30 @@ class ReportsScreen extends StatelessWidget {
               if (state.logs.isEmpty) {
                 return const Center(child: Text('No hay registros.'));
               }
-              return ListView.builder(
-                itemCount: state.logs.length,
-                itemBuilder: (context, index) {
-                  final log = state.logs[index];
-                  final formattedDate = DateFormatter.toDateTime(DateFormatter.parse(log.createdAt));
-                  return Card(
-                    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    child: ListTile(
-                      leading: Icon(
-                        log.result == 'GRANTED' ? Icons.check_circle : Icons.error,
-                        color: log.result == 'GRANTED' ? Colors.green : Colors.red,
-                      ),
-                      title: Text('Usuario: ${log.idUser ?? "Desconocido"} - Dispositivo: ${log.device ?? "N/A"}'),
-                      subtitle: Text('Acción: ${log.action}\nFecha: $formattedDate'),
-                      isThreeLine: true,
-                    ),
-                  );
+              return RefreshIndicator(
+                onRefresh: () async {
+                  context.read<AdminLogBloc>().add(const LoadAdminLogs());
+                  await Future.delayed(const Duration(milliseconds: 500));
                 },
+                child: ListView.builder(
+                  itemCount: state.logs.length,
+                  itemBuilder: (context, index) {
+                    final log = state.logs[index];
+                    final formattedDate = DateFormatter.toDateTime(DateFormatter.parse(log.createdAt));
+                    return Card(
+                      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      child: ListTile(
+                        leading: Icon(
+                          log.result == 'GRANTED' ? Icons.check_circle : Icons.error,
+                          color: log.result == 'GRANTED' ? Colors.green : Colors.red,
+                        ),
+                        title: Text('Usuario: ${log.idUser ?? "Desconocido"} - Dispositivo: ${log.device ?? "N/A"}'),
+                        subtitle: Text('Acción: ${log.action}\nFecha: $formattedDate'),
+                        isThreeLine: true,
+                      ),
+                    );
+                  },
+                ),
               );
             } else if (state is AdminLogError) {
               return Center(child: Text(state.message, style: const TextStyle(color: Colors.red)));

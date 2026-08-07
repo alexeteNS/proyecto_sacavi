@@ -92,22 +92,28 @@ class VehiclesScreen extends StatelessWidget {
             if (vehicles.isEmpty) {
               return const Center(child: Text('No tienes vehículos.'));
             }
-            return ListView.builder(
-              itemCount: vehicles.length,
-              itemBuilder: (context, index) {
-                final v = vehicles[index];
-                return ListTile(
-                  leading: VehicleLogo(brand: v.brand),
-                  title: Text(v.displayName),
-                  subtitle: Text(v.displayInfo),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.delete, color: Colors.red),
-                    onPressed: () {
-                      context.read<VehicleBloc>().add(DeleteVehicle(v.idVehicle));
-                    },
-                  ),
-                );
+            return RefreshIndicator(
+              onRefresh: () async {
+                context.read<VehicleBloc>().add(LoadVehicles());
+                await Future.delayed(const Duration(milliseconds: 500));
               },
+              child: ListView.builder(
+                itemCount: vehicles.length,
+                itemBuilder: (context, index) {
+                  final v = vehicles[index];
+                  return ListTile(
+                    leading: VehicleLogo(brand: v.brand),
+                    title: Text(v.displayName),
+                    subtitle: Text(v.displayInfo),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.delete, color: Colors.red),
+                      onPressed: () {
+                        context.read<VehicleBloc>().add(DeleteVehicle(v.idVehicle));
+                      },
+                    ),
+                  );
+                },
+              ),
             );
           }
           return const Center(child: Text('Error cargando vehículos.'));
